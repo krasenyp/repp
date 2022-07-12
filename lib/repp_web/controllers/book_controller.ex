@@ -9,7 +9,9 @@ defmodule ReppWeb.BookController do
   def index(conn, _params) do
     books = Books.list_books()
 
-    render(conn, "index.json", books: books)
+    conn
+    |> put_resp_header("cache-control", "public, max-age=60")
+    |> render("index.json", books: books)
   end
 
   def create(conn, %{"book" => book_params}) do
@@ -24,7 +26,9 @@ defmodule ReppWeb.BookController do
   def show(conn, %{"id" => id}) do
     book = Books.get_book!(id)
 
-    render(conn, "show.json", book: book)
+    conn
+    |> put_resp_header("cache-control", "public, max-age=60")
+    |> render("show.json", book: book)
   end
 
   def update(conn, %{"id" => id, "book" => book_params}) do
