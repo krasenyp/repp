@@ -1,5 +1,5 @@
-defmodule Frugality.EntityTagSet do
-  alias Frugality.EntityTag
+defmodule Frugality.Core.EntityTagSet do
+  alias Frugality.Core.EntityTag
 
   @type t :: :any | [EntityTag.t()]
 

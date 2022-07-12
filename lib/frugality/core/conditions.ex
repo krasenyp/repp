@@ -1,6 +1,6 @@
-defmodule Frugality.Condition do
-  alias Frugality.EntityTagSet
-  alias Frugality.Metadata
+defmodule Frugality.Core.Condition do
+  alias Frugality.Core.EntityTagSet
+  alias Frugality.Core.Metadata
 
   @type t ::
           {:if_match | :if_none_match, EntityTagSet.t()}

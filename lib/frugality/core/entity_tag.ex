@@ -1,4 +1,4 @@
-defmodule Frugality.EntityTag do
+defmodule Frugality.Core.EntityTag do
   @type weak :: {:weak, String.t()}
   @type strong :: {:strong, String.t()}
   @type t :: weak() | strong()

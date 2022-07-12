@@ -1,36 +1,33 @@
 defmodule Frugality.Metadata do
-  alias Frugality.EntityTag
+  @behaviour Plug
 
-  @type t :: %__MODULE__{
-          entity_tag: EntityTag.t(),
-          last_modified: DateTime.t()
-        }
+  defmacro __using__([]) do
+    quote do
+      import Frugality
 
-  @type header_pair :: {String.t(), String.t()}
-
-  defstruct [:entity_tag, :last_modified]
-
-  @spec new(Enum.t()) :: t()
-  def new(fields) do
-    struct!(__MODULE__, fields)
+      plug Frugality.Metadata
+    end
   end
 
-  @spec to_headers(t()) :: [header_pair()]
-  def to_headers(%__MODULE__{entity_tag: nil, last_modified: nil}), do: []
+  @impl Plug
+  def init(opts), do: opts
 
-  def to_headers(%__MODULE__{entity_tag: etag, last_modified: nil}),
-    do: [{"etag", EntityTag.to_string(etag)}]
+  @impl Plug
+  def call(%Plug.Conn{} = conn, _) do
+    Plug.Conn.register_before_send(conn, &apply_validators/1)
+  end
 
-  def to_headers(%__MODULE__{entity_tag: nil, last_modified: lm}),
-    do: [{"last-modified", serialize_date(lm)}]
+  defp apply_validators(%Plug.Conn{private: private} = conn) do
+    private
+    |> Access.get(:frugality_metadata)
+    |> then(fn
+      {:derived, metadata} ->
+        metadata
 
-  def to_headers(%__MODULE__{entity_tag: etag, last_modified: lm}),
-    do: [{"etag", EntityTag.to_string(etag)}, {"last-modified", serialize_date(lm)}]
-
-  defp serialize_date(%DateTime{} = dt) do
-    dt
-    |> DateTime.to_naive()
-    |> NaiveDateTime.to_erl()
-    |> :cow_date.rfc1123()
+      _ ->
+        Metadata.new([])
+    end)
+    |> Metadata.to_headers()
+    |> then(&Plug.Conn.merge_resp_headers(conn, &1))
   end
 end

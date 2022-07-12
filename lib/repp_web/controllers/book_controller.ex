@@ -6,13 +6,15 @@ defmodule ReppWeb.BookController do
 
   import Frugality
 
+  plug Frugality.Metadata
+
   action_fallback ReppWeb.FallbackController
 
   def index(conn, _params) do
     books = Books.list_books()
 
     conn
-    |> put_resp_header("cache-control", "public, max-age=60")
+    |> cache_for(60)
     |> derive_metadata()
     |> render("index.json", books: books)
   end
@@ -30,7 +32,7 @@ defmodule ReppWeb.BookController do
     book = Books.get_book!(id)
 
     conn
-    |> put_resp_header("cache-control", "public, max-age=60")
+    |> cache_for(60)
     |> derive_metadata()
     |> render("show.json", book: book)
   end
@@ -50,4 +52,8 @@ defmodule ReppWeb.BookController do
       send_resp(conn, :no_content, "")
     end
   end
+
+  defp cache_for(conn, seconds), do: put_cache_control(conn, "public, max-age=#{seconds}")
+
+  defp put_cache_control(conn, cc), do: put_resp_header(conn, "cache-control", cc)
 end
