@@ -32,7 +32,7 @@ jobs:
       with:
         host: ${{ secrets.PROD_HOST }}
         username: ${{ secrets.PROD_USERNAME }}
-        key: ${{ secrets.PROD_SSH_KEY }}
+        password: ${{ secrets.PROD_SSH_KEY }}
         source: "_build/prod/rel/repp"
         target: "/root/"
     - name: Run migrations
@@ -40,7 +40,7 @@ jobs:
       with:
         host: ${{ secrets.PROD_HOST }}
         username: ${{ secrets.PROD_USERNAME }}
-        key: ${{ secrets.PROD_SSH_KEY }}
+        password: ${{ secrets.PROD_SSH_KEY }}
         script: /root/_build/prod/rel/repp/bin/repp eval "Repp.Release.migrate"
     - name: Restart Server
       uses: appleboy/ssh-action@master
