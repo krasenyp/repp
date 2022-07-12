@@ -50,4 +50,5 @@ jobs:
         host: ${{ secrets.PROD_HOST }}
         username: ${{ secrets.PROD_USERNAME }}
         key: ${{ secrets.PROD_SSH_KEY }}
+        passphrase: ${{ secrets.PASSPHRASE }}
         script: sudo systemctl restart repp.service
