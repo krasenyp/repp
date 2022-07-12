@@ -4,6 +4,8 @@ defmodule ReppWeb.BookController do
   alias Repp.Books
   alias Repp.Books.Book
 
+  import Frugality
+
   action_fallback ReppWeb.FallbackController
 
   def index(conn, _params) do
@@ -11,6 +13,7 @@ defmodule ReppWeb.BookController do
 
     conn
     |> put_resp_header("cache-control", "public, max-age=60")
+    |> derive_metadata()
     |> render("index.json", books: books)
   end
 
@@ -28,6 +31,7 @@ defmodule ReppWeb.BookController do
 
     conn
     |> put_resp_header("cache-control", "public, max-age=60")
+    |> derive_metadata()
     |> render("show.json", book: book)
   end
 
