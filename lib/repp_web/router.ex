@@ -7,6 +7,8 @@ defmodule ReppWeb.Router do
 
   scope "/api", ReppWeb do
     pipe_through :api
+
+    resources "/books", BookController, except: [:new, :edit]
   end
 
   # Enables LiveDashboard only for development
