@@ -30,10 +30,10 @@ defmodule Frugality.Core.Condition do
     do: {c, DateTime.compare(lm, ims) == :gt}
 end
 
-defmodule Frugality.Conditions do
-  alias Frugality.Condition
-  alias Frugality.EntityTagSet
-  alias Frugality.Metadata
+defmodule Frugality.Core.Conditions do
+  alias Frugality.Core.Condition
+  alias Frugality.Core.EntityTagSet
+  alias Frugality.Core.Metadata
 
   @type result :: :ok | :precondition_failed | :not_modified
 
