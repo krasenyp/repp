@@ -14,10 +14,9 @@ defmodule ReppWeb.BookController do
 
     conn
     |> derive_metadata(books: books)
+    |> cache_for(60)
     |> short_circuit!(fn conn ->
-      conn
-      |> cache_for(60)
-      |> render("index.json", books: books)
+      render(conn, "index.json", books: books)
     end)
   end
 

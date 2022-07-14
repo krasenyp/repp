@@ -28,6 +28,7 @@ defmodule Frugality.Metadata do
 
   def encode(term) do
     term
+    |> :erlang.term_to_binary()
     |> then(&:crypto.hash(:md5, &1))
     |> Base.encode16()
   end

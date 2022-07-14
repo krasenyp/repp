@@ -2,6 +2,7 @@ defmodule Frugality.Plug do
   @behaviour Plug
 
   alias Frugality.Core.Conditions
+  alias Frugality.Core.EntityTag
   alias Frugality.Core.Metadata
 
   import Plug.Conn
@@ -34,6 +35,8 @@ defmodule Frugality.Plug do
     end
   end
 
+  defp apply_validators(conn), do: conn
+
   defp derive_from_resp_body(%Plug.Conn{resp_body: resp_body} = conn) do
     entity_tag =
       resp_body
@@ -49,7 +52,7 @@ defmodule Frugality.Plug do
 
     case result do
       :ok ->
-        Frugality.put_metadata(conn, metadata)
+        Frugality.put_metadata(conn, entity_tag: EntityTag.to_string(metadata.entity_tag))
 
       status ->
         resp(conn, status, "")

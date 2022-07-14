@@ -46,7 +46,9 @@ defmodule Frugality do
         acc
 
       {:entity_tag, raw}, acc when is_binary(raw) ->
-        [{:entity_tag, EntityTag.from_string(raw)} | acc]
+        with {:ok, tag} <- EntityTag.from_string(raw) do
+          [{:entity_tag, tag} | acc]
+        end
 
       {:last_modified, raw}, acc when is_binary(raw) ->
         last_modified =
