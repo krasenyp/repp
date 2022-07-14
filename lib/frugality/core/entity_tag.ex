@@ -1,4 +1,6 @@
 defmodule Frugality.Core.EntityTag do
+  alias Frugality.Core.EntityTagSet
+
   @type weak :: {:weak, String.t()}
   @type strong :: {:strong, String.t()}
   @type t :: weak() | strong()
@@ -21,6 +23,16 @@ defmodule Frugality.Core.EntityTag do
   def to_string(weak(tag)), do: "W/\"#{tag}\""
 
   def to_string(strong(tag)), do: "\"#{tag}\""
+
+  def from_string(string) do
+    case EntityTagSet.from_string(string) do
+      [tag] ->
+        {:ok, tag}
+
+      _ ->
+        {:error, :invalid}
+    end
+  end
 
   @spec weak_eq?(t(), t()) :: boolean()
   def weak_eq?({_, tag}, {_, tag}), do: true

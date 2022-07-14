@@ -1,12 +1,11 @@
 defmodule ReppWeb.BookController do
   use ReppWeb, :controller
+  use Frugality
 
   alias Repp.Books
   alias Repp.Books.Book
 
-  import Frugality
-
-  plug Frugality.Metadata
+  plug :put_generator, ReppWeb.BookMetadata
 
   action_fallback ReppWeb.FallbackController
 
@@ -14,9 +13,12 @@ defmodule ReppWeb.BookController do
     books = Books.list_books()
 
     conn
-    |> cache_for(60)
-    |> derive_metadata()
-    |> render("index.json", books: books)
+    |> derive_metadata(books: books)
+    |> short_circuit!(fn conn ->
+      conn
+      |> cache_for(60)
+      |> render("index.json", books: books)
+    end)
   end
 
   def create(conn, %{"book" => book_params}) do
@@ -33,7 +35,6 @@ defmodule ReppWeb.BookController do
 
     conn
     |> cache_for(60)
-    |> derive_metadata()
     |> render("show.json", book: book)
   end
 

@@ -1,33 +1,60 @@
 defmodule Frugality.Metadata do
-  @behaviour Plug
+  alias Frugality.Core.EntityTag
 
-  defmacro __using__([]) do
+  @callback entity_tag(any()) :: String.t() | nil
+  @callback last_modified(any()) :: DateTime.t() | nil
+
+  defmacro __using__(_) do
     quote do
-      import Frugality
+      @behaviour Frugality.Metadata
 
-      plug Frugality.Metadata
+      @impl Frugality.Metadata
+      def entity_tag(_), do: nil
+
+      @impl Frugality.Metadata
+      def last_modified(_), do: nil
+
+      defoverridable Frugality.Metadata
+
+      def encode(term) do
+        Frugality.Metadata.encode(term)
+      end
+
+      def derive(data) do
+        Frugality.Metadata.derive(__MODULE__, data)
+      end
     end
   end
 
-  @impl Plug
-  def init(opts), do: opts
-
-  @impl Plug
-  def call(%Plug.Conn{} = conn, _) do
-    Plug.Conn.register_before_send(conn, &apply_validators/1)
+  def encode(term) do
+    term
+    |> then(&:crypto.hash(:md5, &1))
+    |> Base.encode16()
   end
 
-  defp apply_validators(%Plug.Conn{private: private} = conn) do
-    private
-    |> Access.get(:frugality_metadata)
-    |> then(fn
-      {:derived, metadata} ->
-        metadata
+  def derive(module, data) do
+    case {module.entity_tag(data), module.last_modified(data)} do
+      {nil, nil} ->
+        []
 
-      _ ->
-        Metadata.new([])
-    end)
-    |> Metadata.to_headers()
-    |> then(&Plug.Conn.merge_resp_headers(conn, &1))
+      {etag, nil} ->
+        [entity_tag: EntityTag.to_string({:weak, etag})]
+
+      {nil, lm} ->
+        [last_modified: serialize_date(lm)]
+
+      {etag, lm} ->
+        [
+          entity_tag: EntityTag.to_string({:weak, etag}),
+          last_modified: serialize_date(lm)
+        ]
+    end
+  end
+
+  defp serialize_date(%DateTime{} = dt) do
+    dt
+    |> DateTime.to_naive()
+    |> NaiveDateTime.to_erl()
+    |> :cow_date.rfc1123()
   end
 end

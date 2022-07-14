@@ -1,13 +1,26 @@
 defmodule Frugality do
   alias Frugality.Core.Conditions
   alias Frugality.Core.Metadata
+  alias Frugality.Core.EntityTag
 
   import Plug.Conn
 
-  def derive_metadata(%Plug.Conn{} = conn) do
-    conn
-    |> put_private(:frugality_metadata, :auto)
-    |> register_before_send(&derive_from_resp_body/1)
+  defmacro __using__(_) do
+    quote do
+      plug Frugality.Plug
+
+      import Frugality
+    end
+  end
+
+  def put_generator(%Plug.Conn{} = conn, generator) do
+    put_private(conn, :frugality_generator, generator)
+  end
+
+  def derive_metadata(%Plug.Conn{private: private} = conn, data) do
+    generator = Access.fetch!(private, :frugality_generator)
+
+    derive_metadata(conn, generator, data)
   end
 
   def derive_metadata(%Plug.Conn{} = conn, generator, data) do
@@ -20,21 +33,38 @@ defmodule Frugality do
     put_metadata(conn, metadata)
   end
 
-  def put_metadata(%Plug.Conn{} = conn, %Metadata{} = metadata) do
-    put_private(conn, :frugality_metadata, {:derived, metadata})
+  def put_metadata(%Plug.Conn{} = conn, metadata) do
+    metadata
+    |> normalize_metadata()
+    |> Metadata.new()
+    |> then(&put_private(conn, :frugality_metadata, {:derived, &1}))
   end
 
-  defp derive_from_resp_body(%Plug.Conn{status: 200, method: method, private: private} = conn)
-       when method in ["GET", "HEAD"] do
+  defp normalize_metadata(metadata) do
+    Enum.reduce(metadata, [], fn
+      {_, nil}, acc ->
+        acc
+
+      {:entity_tag, raw}, acc when is_binary(raw) ->
+        [{:entity_tag, EntityTag.from_string(raw)} | acc]
+
+      {:last_modified, raw}, acc when is_binary(raw) ->
+        last_modified =
+          raw
+          |> :cow_date.parse_date()
+          |> NaiveDateTime.from_erl!()
+          |> DateTime.from_naive!("Etc/UTC")
+
+        [{:last_modified, last_modified} | acc]
+
+      _, acc ->
+        acc
+    end)
+  end
+
+  def short_circuit!(%Plug.Conn{private: private} = conn, cont) do
     case Access.get(private, :frugality_metadata) do
-      :auto ->
-        entity_tag =
-          conn.resp_body
-          |> then(&:crypto.hash(:md5, &1))
-          |> Base.encode16()
-
-        metadata = Metadata.new(entity_tag: {:weak, entity_tag})
-
+      {:derived, metadata} ->
         result =
           conn
           |> Conditions.from_conn()
@@ -42,16 +72,17 @@ defmodule Frugality do
 
         case result do
           :ok ->
-            put_metadata(conn, metadata)
+            cont.(conn)
 
           status ->
-            resp(conn, status, "")
+            send_resp(conn, status, "")
         end
 
+      :auto ->
+        raise ArgumentError, "can not short circuit an automatic validators derivation"
+
       _ ->
-        conn
+        raise ArgumentError, "invalid metadata"
     end
   end
-
-  defp derive_from_resp_body(conn), do: conn
 end

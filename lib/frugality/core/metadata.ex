@@ -1,9 +1,12 @@
 defmodule Frugality.Core.Metadata do
   alias Frugality.Core.EntityTag
 
+  @type entity_tag :: EntityTag.t()
+  @type last_modified :: DateTime.t()
+
   @type t :: %__MODULE__{
-          entity_tag: EntityTag.t(),
-          last_modified: DateTime.t()
+          entity_tag: entity_tag(),
+          last_modified: last_modified()
         }
 
   @type header_pair :: {String.t(), String.t()}
